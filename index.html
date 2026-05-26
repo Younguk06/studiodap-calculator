@@ -51,8 +51,8 @@
       z-index: 10;
       box-shadow: 0 1px 8px rgba(0,0,0,.04);
     }
-    .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
-    .logo em { color: var(--text); font-style: normal; }
+    .logo { font-size: 15px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); cursor: pointer; }
+    .logo .logo-sub { color: #4A5160; }
     .header-left {
       display: flex;
       align-items: center;
@@ -756,11 +756,8 @@
 <body>
 
 <header>
-  <div class="header-left">
-    <div class="logo">스튜디오<em>답</em></div>
-    <a class="header-link" href="https://www.studiodap.kr" target="_blank">www.studiodap.kr</a>
-  </div>
-  <div class="header-tag">견적 계산기</div>
+  <div class="logo" onclick="restart()">스튜디오답 <span class="logo-sub">견적 계산기</span></div>
+  <a class="header-link" href="https://www.studiodap.kr" target="_blank">www.studiodap.kr</a>
 </header>
 
 <main>
