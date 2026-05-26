@@ -491,6 +491,64 @@
     }
     .btn-contact .ico { font-size: 14px; }
 
+    /* ── Contact Modal ── */
+    .contact-modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.45);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0 0 0 0;
+      animation: fadeIn .2s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .contact-modal {
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      padding: 28px 24px 40px;
+      width: 100%; max-width: 580px;
+      position: relative;
+      animation: slideUp .25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(24px); opacity:0; }
+      to   { transform: translateY(0);    opacity:1; }
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--bg); border: none; border-radius: 50%;
+      width: 32px; height: 32px; font-size: 13px; color: var(--muted);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-family: inherit;
+    }
+    .modal-close:hover { background: var(--border); }
+    .modal-handle {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 99px; margin: 0 auto 20px;
+    }
+    .modal-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 4px; letter-spacing: -0.4px; }
+    .modal-sub   { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .modal-contact-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 18px; border-radius: var(--r);
+      background: var(--bg); border: 1.5px solid var(--border);
+      text-decoration: none; color: var(--text);
+      margin-bottom: 10px; transition: all .18s;
+    }
+    .modal-contact-row:hover { border-color: var(--accent); background: var(--accent-dim); }
+    .modal-contact-icon { font-size: 22px; flex-shrink: 0; }
+    .modal-contact-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px; }
+    .modal-contact-value { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; user-select: text; -webkit-user-select: text; }
+    .modal-contact-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .modal-contact-right { margin-left: auto; flex-shrink: 0; }
+    .btn-copy {
+      padding: 7px 12px; background: var(--bg);
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      cursor: pointer; font-family: inherit; transition: all .18s;
+      white-space: nowrap;
+    }
+    .btn-copy:hover  { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .btn-copy.copied { border-color: #12B76A; color: #12B76A; background: rgba(18,183,106,.08); }
+
     /* ── Intro Screen ── */
     .intro {
       display: none;
@@ -1031,10 +1089,41 @@
 
 <!-- ── 하단 고정 버튼 ── -->
 <div class="contact-footer">
-  <a class="btn-contact" href="mailto:06@studiodap.kr?subject=견적 문의드립니다">
+  <button class="btn-contact" onclick="showContactModal()">
     <span class="ico">💬</span>
-    잘 모르겠어요 — 스튜디오답에 직접 연락하기
-  </a>
+    잘 모르겠어요 — 스튜디오답 연락하기
+  </button>
+</div>
+
+<!-- ── Contact Modal ── -->
+<div class="contact-modal-overlay" id="contactModal" onclick="hideContactModal()" style="display:none;">
+  <div class="contact-modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="hideContactModal()">✕</button>
+    <div class="modal-title">스튜디오답 연락하기</div>
+    <div class="modal-sub">궁금한 점이 있으시면 편하게 연락주세요</div>
+    <a class="modal-contact-row" href="tel:010-3149-6361">
+      <span class="modal-contact-icon">📞</span>
+      <div>
+        <div class="modal-contact-label">전화</div>
+        <div class="modal-contact-value">010-3149-6361</div>
+        <div class="modal-contact-sub">조영욱 PD</div>
+      </div>
+      <div class="modal-contact-right">
+        <button class="btn-copy" id="copyPhone" onclick="copyText(event,'010-3149-6361','copyPhone')">복사</button>
+      </div>
+    </a>
+    <a class="modal-contact-row" href="mailto:06@studiodap.kr">
+      <span class="modal-contact-icon">✉️</span>
+      <div>
+        <div class="modal-contact-label">이메일</div>
+        <div class="modal-contact-value">06@studiodap.kr</div>
+      </div>
+      <div class="modal-contact-right">
+        <button class="btn-copy" id="copyEmail" onclick="copyText(event,'06@studiodap.kr','copyEmail')">복사</button>
+      </div>
+    </a>
+  </div>
 </div>
 
 <script>
@@ -1258,7 +1347,7 @@ function buildS4() {
   const opts = [];
 
   if (['shoot_only','shoot_edit','full'].includes(svc))
-    opts.push({ k:'drone',    label:'드론 촬영',    desc:'항공 드론 샷 포함',           price:'+50만원' });
+    opts.push({ k:'drone',    label:'드론 촬영',    desc:'항공 드론 샷 포함',           price:'+30만원' });
 
   if (['shoot_edit','full','edit_only'].includes(svc)) {
     opts.push({ k:'subtitle', label:'영문 자막',    desc:'영문 자막 추가 제작',          price:'+20만원' });
@@ -1377,7 +1466,7 @@ function calcPrice() {
   }
 
   // Options
-  if (S.options.drone)    { min+=50; max+=50; rows.push({ l:'드론 촬영',      v:'+50만원' }); }
+  if (S.options.drone)    { min+=30; max+=30; rows.push({ l:'드론 촬영',      v:'+30만원' }); }
   if (S.options.subtitle) { min+=20; max+=20; rows.push({ l:'영문 자막',      v:'+20만원' }); }
   if (S.options.multiVer) { min+=20; max+=20; rows.push({ l:'하이라이트 숏폼 추가', v:'+20만원' }); }
   if (S.options.rush) {
@@ -1581,6 +1670,27 @@ async function submitQuote(e) {
     btn.textContent = '견적 제출하기 →';
     alert('전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
   }
+}
+
+// ─────────────────────────────────────────────
+//  Contact Modal
+// ─────────────────────────────────────────────
+function copyText(e, text, btnId) {
+  e.preventDefault(); e.stopPropagation();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(btnId);
+    btn.textContent = '복사됨 ✓'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function showContactModal() {
+  document.getElementById('contactModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function hideContactModal() {
+  document.getElementById('contactModal').style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 // ─────────────────────────────────────────────
