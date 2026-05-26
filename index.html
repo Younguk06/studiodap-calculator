@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>스튜디오답 · 견적 계산기</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #F2F4F6;
+      --surface:    #FFFFFF;
+      --border:     #E5E8EB;
+      --border2:    #F2F4F6;
+      --accent:     #3182F6;
+      --accent-dim: rgba(49,130,246,.08);
+      --accent-mid: rgba(49,130,246,.15);
+      --text:       #191F28;
+      --muted:      #8B95A1;
+      --dim:        #B0B8C1;
+      --r:          16px;
+      --rs:         12px;
+      --shadow:     0 2px 12px rgba(0,0,0,.06);
+      --shadow-md:  0 4px 20px rgba(0,0,0,.09);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 18px 28px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 1px 8px rgba(0,0,0,.04);
+    }
+    .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+    .logo em { color: var(--text); font-style: normal; }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-link {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .18s;
+    }
+    .header-link:hover { color: var(--accent); }
+    .header-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 36px 20px 110px;
+    }
+
+    /* ── Progress ── */
+    .progress {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 32px;
+    }
+    .progress-dot {
+      flex: 1;
+      height: 4px;
+      border-radius: 99px;
+      background: var(--border);
+      transition: background .35s ease;
+    }
+    .progress-dot.on { background: var(--accent); }
+
+    /* ── Step wrapper ── */
+    .step { display: none; }
+    .step.active {
+      display: block;
+      animation: up .26s ease both;
+    }
+    @keyframes up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Step header text ── */
+    .step-tag {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.3px;
+      margin-bottom: 8px;
+    }
+    .step-title {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.4;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .step-sub {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    /* ── Option cards ── */
+    .cards { display: flex; flex-direction: column; gap: 8px; }
+    .cards.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cards.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: border-color .18s, background .18s, box-shadow .18s;
+      position: relative;
+      user-select: none;
+      box-shadow: var(--shadow);
+    }
+    .card:hover {
+      border-color: rgba(49,130,246,.4);
+      box-shadow: var(--shadow-md);
+    }
+    .card.sel {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      box-shadow: 0 0 0 3px rgba(49,130,246,.12);
+    }
+
+    .card-icon  { font-size: 22px; margin-bottom: 8px; display: block; }
+    .card-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; color: var(--text); }
+    .card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .card-price { font-size: 11px; font-weight: 700; color: var(--accent); margin-top: 7px; }
+
+    .card-featured {
+      margin-top: 14px; /* 뱃지 공간 확보 */
+    }
+    .rec-badge {
+      position: absolute;
+      top: -13px;
+      left: 14px;
+      display: inline-flex;
+      align-items: center;
+      background: linear-gradient(90deg, #3182F6, #62A4FB);
+      color: #fff;
+      font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 99px;
+      letter-spacing: 0.1px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(49,130,246,.3);
+    }
+
+    .card .tick {
+      position: absolute; top: 14px; right: 14px;
+      width: 20px; height: 20px;
+      background: var(--accent); border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      font-size: 10px; color: #fff; font-weight: 800;
+      box-shadow: 0 2px 6px rgba(49,130,246,.4);
+    }
+    .card.sel .tick { display: flex; }
+
+    /* ── Section label ── */
+    .sec {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      letter-spacing: 0.3px; margin: 20px 0 8px;
+    }
+    .sec:first-child { margin-top: 0; }
+
+    /* ── Toggles ── */
+    .toggles { display: flex; flex-direction: column; gap: 8px; }
+    .tog {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--rs);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: border-color .18s, background .18s, box-shadow .18s;
+      user-select: none;
+      box-shadow: var(--shadow);
+    }
+    .tog:hover { border-color: rgba(49,130,246,.4); box-shadow: var(--shadow-md); }
+    .tog.on    { border-color: var(--accent); background: var(--accent-dim); }
+    .tog-info  { flex: 1; }
+    .tog-label { font-size: 14px; font-weight: 600; color: var(--text); }
+    .tog-desc  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .tog-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: 12px; }
+    .tog-price { font-size: 12px; font-weight: 700; color: var(--accent); }
+    .sw {
+      width: 42px; height: 24px;
+      background: var(--border); border-radius: 99px;
+      position: relative; transition: background .22s;
+      flex-shrink: 0;
+    }
+    .tog.on .sw { background: var(--accent); }
+    .sw::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      background: #fff; border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform .22s;
+      box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    }
+    .tog.on .sw::after { transform: translateX(18px); }
+
+    /* ── Nav buttons ── */
+    .nav { display: flex; gap: 10px; margin-top: 28px; }
+    .btn-back {
+      padding: 14px 20px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--rs);
+      color: var(--muted);
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .18s;
+      font-family: inherit;
+      box-shadow: var(--shadow);
+    }
+    .btn-back:hover { border-color: var(--dim); color: var(--text); }
+    .btn-next {
+      flex: 1;
+      padding: 15px 20px;
+      background: linear-gradient(135deg, #3182F6 0%, #62A4FB 100%);
+      border: none; border-radius: var(--rs);
+      color: #fff;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: opacity .18s, box-shadow .18s;
+      font-family: inherit;
+      box-shadow: 0 4px 14px rgba(49,130,246,.35);
+    }
+    .btn-next:hover   { opacity: .92; box-shadow: 0 6px 18px rgba(49,130,246,.45); }
+    .btn-next:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Result ── */
+    #stepResult { text-align: center; }
+
+    .res-hero {
+      background: linear-gradient(135deg, #3182F6 0%, #62A4FB 100%);
+      border-radius: 20px;
+      padding: 32px 24px 28px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 28px rgba(49,130,246,.3);
+    }
+    .res-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.22);
+      color: #fff;
+      font-size: 11px; font-weight: 700;
+      padding: 5px 14px; border-radius: 99px;
+      letter-spacing: 0.4px;
+      margin-bottom: 16px;
+    }
+    .res-price {
+      font-size: 52px; font-weight: 900;
+      letter-spacing: -2px; line-height: 1;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .res-unit { font-size: 14px; color: rgba(255,255,255,.75); }
+
+    .res-summary, .res-breakdown {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px;
+      text-align: left;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .bd-head, .sum-head {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      letter-spacing: 0.3px; margin-bottom: 14px;
+    }
+
+    .bd-row, .sum-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border2);
+      font-size: 13px;
+    }
+    .bd-row:last-of-type, .sum-row:last-child { border-bottom: none; }
+    .bd-row .lbl, .sum-key { color: var(--muted); flex-shrink: 0; }
+    .sum-key { min-width: 76px; }
+    .bd-row .val, .sum-val { font-weight: 600; color: var(--text); }
+
+    .bd-total {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 14px; margin-top: 4px;
+      font-size: 15px; font-weight: 800;
+      border-top: 2px solid var(--border);
+    }
+    .bd-total .tot-val { color: var(--accent); }
+
+    .res-note {
+      font-size: 12px; color: var(--muted); line-height: 1.7;
+      text-align: left;
+      background: var(--surface);
+      border-radius: var(--rs);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .res-note strong { color: var(--text); }
+
+    .btn-cta {
+      display: block; width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #3182F6 0%, #62A4FB 100%);
+      color: #fff;
+      font-size: 15px; font-weight: 700;
+      border: none; border-radius: var(--r);
+      cursor: pointer; text-decoration: none;
+      text-align: center; margin-bottom: 10px;
+      font-family: inherit;
+      box-shadow: 0 4px 14px rgba(49,130,246,.35);
+      transition: opacity .18s, box-shadow .18s;
+    }
+    .btn-cta:hover { opacity: .92; box-shadow: 0 6px 18px rgba(49,130,246,.45); }
+    .btn-restart {
+      display: block; width: 100%;
+      padding: 14px;
+      background: var(--surface); color: var(--muted);
+      font-size: 13px; font-weight: 600;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      cursor: pointer; font-family: inherit; transition: all .18s;
+      box-shadow: var(--shadow);
+    }
+    .btn-restart:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── CTA Card (견적 문의 폼) ── */
+    .cta-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .cta-header {
+      background: linear-gradient(135deg, #F0F6FF 0%, #E8F1FD 100%);
+      border-bottom: 1px solid #DCEAFE;
+      padding: 20px 24px 18px;
+    }
+    .cta-title {
+      font-size: 15px; font-weight: 800;
+      color: var(--text); margin-bottom: 3px;
+    }
+    .cta-sub {
+      font-size: 12px; color: #5C8FDB; font-weight: 500;
+    }
+
+    .contact-form { padding: 20px 24px 24px; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group:last-of-type { margin-bottom: 16px; }
+    .form-group label {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 5px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .form-group label .opt {
+      font-weight: 500; color: var(--dim);
+      font-size: 10px; text-transform: none;
+      background: var(--bg); border-radius: 4px;
+      padding: 1px 6px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--rs);
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color .18s, background .18s, box-shadow .18s;
+      outline: none;
+    }
+    .form-group input::placeholder { color: var(--dim); font-size: 13px; }
+    .form-group input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(49,130,246,.10);
+    }
+    .btn-submit {
+      display: block; width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #3182F6 0%, #62A4FB 100%);
+      color: #fff;
+      font-size: 15px; font-weight: 700;
+      border: none; border-radius: var(--rs);
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 4px 14px rgba(49,130,246,.35);
+      transition: opacity .18s, box-shadow .18s;
+      letter-spacing: -0.2px;
+    }
+    .btn-submit:hover   { opacity: .92; box-shadow: 0 6px 18px rgba(49,130,246,.45); }
+    .btn-submit:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Success State ── */
+    .success-box {
+      text-align: center;
+      padding: 36px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-md);
+      margin-top: 12px;
+    }
+    .success-icon { font-size: 42px; margin-bottom: 14px; line-height: 1; }
+    .success-title {
+      font-size: 18px; font-weight: 800;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .success-sub {
+      font-size: 13px; color: var(--muted); line-height: 1.8;
+    }
+
+    /* ── Contact Footer ── */
+    .contact-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 20;
+      background: linear-gradient(to top, rgba(242,244,246,1) 70%, rgba(242,244,246,0));
+      padding: 16px 20px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .btn-contact {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 22px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      color: var(--muted);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+      box-shadow: 0 2px 16px rgba(0,0,0,.10);
+      transition: all .18s;
+      white-space: nowrap;
+    }
+    .btn-contact:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 4px 20px rgba(49,130,246,.18);
+    }
+    .btn-contact .ico { font-size: 14px; }
+
+    /* ── Intro Screen ── */
+    .intro {
+      display: none;
+      flex-direction: column;
+    }
+    .intro.active { display: flex; }
+
+    .intro-hero {
+      background: linear-gradient(145deg, #1a6df0 0%, #3182F6 45%, #62A4FB 100%);
+      border-radius: 24px;
+      padding: 44px 32px 40px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 36px rgba(49,130,246,.32);
+      position: relative;
+      overflow: hidden;
+    }
+    .intro-hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      background: rgba(255,255,255,.07);
+      border-radius: 50%;
+    }
+    .intro-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: -30px;
+      width: 160px; height: 160px;
+      background: rgba(255,255,255,.05);
+      border-radius: 50%;
+    }
+    .intro-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.2);
+      color: rgba(255,255,255,.92);
+      font-size: 11px; font-weight: 700;
+      padding: 5px 14px; border-radius: 99px;
+      letter-spacing: 0.4px;
+      margin-bottom: 22px;
+    }
+    .intro-title {
+      font-size: 28px; font-weight: 900;
+      color: #fff; line-height: 1.25;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      position: relative; z-index: 1;
+    }
+    .intro-sub {
+      font-size: 14px; color: rgba(255,255,255,.78);
+      line-height: 1.7;
+      position: relative; z-index: 1;
+    }
+
+    .intro-chips {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 20px;
+    }
+    .intro-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 8px 16px;
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+    .intro-chip .chip-ico { font-size: 14px; }
+
+    .btn-start {
+      display: block; width: 100%;
+      padding: 17px;
+      background: linear-gradient(135deg, #3182F6 0%, #62A4FB 100%);
+      color: #fff;
+      font-size: 16px; font-weight: 800;
+      border: none; border-radius: var(--r);
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 6px 20px rgba(49,130,246,.4);
+      transition: opacity .18s, box-shadow .18s;
+      letter-spacing: -0.3px;
+    }
+    .btn-start:hover { opacity: .93; box-shadow: 0 8px 24px rgba(49,130,246,.5); }
+
+    /* ── Intro Type Selection Cards ── */
+    .intro-type-label {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      letter-spacing: 0.3px; margin-bottom: 12px; text-align: center;
+    }
+    .type-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 16px; }
+    .type-card {
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: var(--r); padding: 22px 16px 18px;
+      cursor: pointer; transition: all .2s;
+      position: relative; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; text-align: left;
+    }
+    .type-card:hover {
+      border-color: rgba(49,130,246,.5); box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .type-card-brand { border-color: var(--border); background: var(--surface); }
+    .type-card-brand:hover { border-color: rgba(49,130,246,.5); background: var(--surface); }
+    .type-badge {
+      position: absolute; top: -13px; left: 14px;
+      display: inline-flex; align-items: center;
+      background: linear-gradient(90deg, #3182F6, #62A4FB);
+      color: #fff;
+      font-size: 11px; font-weight: 700; padding: 4px 10px;
+      border-radius: 99px; white-space: nowrap;
+      letter-spacing: 0.1px;
+      box-shadow: 0 2px 8px rgba(49,130,246,.3);
+    }
+    .type-icon { font-size: 24px; margin-bottom: 8px; }
+    .type-title { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 5px; letter-spacing: -0.3px; line-height: 1.3; }
+    .type-desc { font-size: 11px; color: var(--muted); line-height: 1.6; flex: 1; margin-bottom: 14px; }
+    .type-arrow { font-size: 12px; font-weight: 700; color: var(--muted); }
+    .type-card-brand .type-arrow { color: var(--muted); }
+
+    /* ── Brand Consultation Screen ── */
+    .brand-screen { display: none; flex-direction: column; }
+    .brand-screen.active { display: flex; animation: up .26s ease both; }
+
+    .brand-hero {
+      background: linear-gradient(145deg, #1C2B4A 0%, #243857 60%, #2D4A72 100%);
+      border-radius: 20px; padding: 36px 28px 32px; margin-bottom: 16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.22); position: relative; overflow: hidden;
+    }
+    .brand-hero::before {
+      content: ''; position: absolute; top: -50px; right: -50px;
+      width: 180px; height: 180px; background: rgba(255,255,255,.05); border-radius: 50%;
+    }
+    .brand-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.15); color: rgba(255,255,255,.88);
+      font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 99px;
+      margin-bottom: 18px; letter-spacing: 0.3px;
+    }
+    .brand-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 10px; letter-spacing: -0.5px; line-height: 1.3; }
+    .brand-sub { font-size: 13px; color: rgba(255,255,255,.68); line-height: 1.75; }
+
+    .brand-form-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow-md); margin-bottom: 12px;
+    }
+    .brand-form-header {
+      background: linear-gradient(135deg, #F0F6FF 0%, #E8F1FD 100%);
+      border-bottom: 1px solid #DCEAFE; padding: 18px 22px;
+    }
+    .brand-form-title { font-size: 14px; font-weight: 800; color: var(--text); }
+    .brand-form-sub { font-size: 12px; color: #5C8FDB; font-weight: 500; margin-top: 2px; }
+    .brand-form-body { padding: 20px 22px 24px; }
+
+    .budget-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 1px; }
+    .budget-pill {
+      padding: 8px 13px; background: var(--bg);
+      border: 1.5px solid var(--border); border-radius: 99px;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all .18s; font-family: inherit;
+    }
+    .budget-pill:hover { border-color: rgba(49,130,246,.4); color: var(--text); }
+    .budget-pill.sel { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+
+    .form-group textarea {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--rs);
+      font-size: 13px; font-family: inherit; color: var(--text);
+      background: var(--bg); resize: none; min-height: 80px;
+      transition: border-color .18s, background .18s, box-shadow .18s; outline: none; line-height: 1.6;
+    }
+    .form-group textarea::placeholder { color: var(--dim); font-size: 12px; }
+    .form-group textarea:focus {
+      border-color: var(--accent); background: #fff;
+      box-shadow: 0 0 0 3px rgba(49,130,246,.10);
+    }
+
+    .btn-back-intro {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      padding: 0; margin-bottom: 14px; transition: color .18s;
+    }
+    .btn-back-intro:hover { color: var(--text); }
+
+    /* ── Brand mini-wizard steps ── */
+    .bstep { display: none; }
+    .bstep.active { display: block; animation: up .26s ease both; }
+    .bstep-tag {
+      font-size: 12px; font-weight: 700; color: var(--accent);
+      letter-spacing: 0.3px; margin-bottom: 8px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .cards.grid2 { grid-template-columns: 1fr; }
+      .type-cards  { grid-template-columns: 1fr; }
+      .step-title  { font-size: 20px; }
+      .res-price   { font-size: 40px; }
+      .res-hero    { padding: 24px 18px 22px; }
+      .intro-title { font-size: 24px; }
+      .intro-hero  { padding: 36px 24px 32px; }
+      .brand-hero  { padding: 28px 20px 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">스튜디오<em>답</em></div>
+    <a class="header-link" href="https://www.studiodap.kr" target="_blank">www.studiodap.kr</a>
+  </div>
+  <div class="header-tag">견적 계산기</div>
+</header>
+
+<main>
+
+  <!-- ── INTRO ── -->
+  <div class="intro active" id="intro">
+    <div class="intro-hero">
+      <div class="intro-eyebrow">✦ 스튜디오답 견적 계산기</div>
+      <div class="intro-title">영상 제작 견적,<br>바로 확인해 보세요</div>
+      <div class="intro-sub">촬영·편집·모션그래픽 등<br>필요한 서비스와 조건을 선택하면<br>예상 견적을 바로 알 수 있어요.</div>
+    </div>
+    <div class="intro-type-label">어떤 프로젝트인가요?</div>
+    <div class="type-cards">
+      <div class="type-card" onclick="startCalc()">
+        <span class="type-icon">🎬</span>
+        <div class="type-title">일반 영상 제작</div>
+        <div class="type-desc">콘텐츠, 인터뷰, 제품 소개, 행사 기록, 쇼츠 등</div>
+        <div class="type-arrow">견적 계산하기 →</div>
+      </div>
+      <div class="type-card type-card-brand" onclick="startBrand()">
+        <div class="type-badge">✦ 맞춤 상담</div>
+        <span class="type-icon">🏆</span>
+        <div class="type-title">브랜드필름 · 웹CF 등</div>
+        <div class="type-desc">외부 섭외, 전문 기획이 필요한 대형 프로젝트</div>
+        <div class="type-arrow">상담 신청하기 →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BRAND CONSULTATION SCREEN ── -->
+  <div class="brand-screen" id="brandScreen">
+
+    <!-- B Step 1: 출연진 -->
+    <div class="bstep active" id="bs1">
+      <button class="btn-back-intro" onclick="goBackIntro()">← 돌아가기</button>
+      <div class="bstep-tag">브랜드필름 CF 상담 · 1/3</div>
+      <div class="step-title">출연진이<br>있나요?</div>
+      <div class="step-sub">견적에 가장 큰 영향을 주는 항목이에요.</div>
+      <div class="cards">
+        <div class="card" data-k="cast" data-v="none" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <span class="card-icon">🎨</span>
+          <div class="card-title">인물 없음</div>
+          <div class="card-desc">공간·제품·그래픽 중심 영상</div>
+        </div>
+        <div class="card" data-k="cast" data-v="internal" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <span class="card-icon">👥</span>
+          <div class="card-title">내부 인원 활용</div>
+          <div class="card-desc">직원, 대표, 관계자 등 섭외 불필요</div>
+        </div>
+        <div class="card" data-k="cast" data-v="external" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <span class="card-icon">🎭</span>
+          <div class="card-title">외부 모델 섭외</div>
+          <div class="card-desc">일반 모델·배우 캐스팅 필요</div>
+        </div>
+        <div class="card" data-k="cast" data-v="celebrity" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <span class="card-icon">⭐</span>
+          <div class="card-title">유명인·인플루언서</div>
+          <div class="card-desc">셀럽, 연예인, 대형 인플루언서 섭외</div>
+        </div>
+      </div>
+      <div class="nav">
+        <button class="btn-next" id="bn1" disabled onclick="bGo(2)">다음 →</button>
+      </div>
+    </div>
+
+    <!-- B Step 2: 결과물 규모 -->
+    <div class="bstep" id="bs2">
+      <div class="bstep-tag">브랜드필름 CF 상담 · 2/3</div>
+      <div class="step-title">결과물 규모를<br>알려주세요</div>
+      <div class="step-sub">선택 사항이에요. 모르셔도 다음으로 넘어가도 돼요.</div>
+      <div class="sec">편수</div>
+      <div class="cards grid3">
+        <div class="card" data-k="count" data-v="one" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <div class="card-title">1편</div>
+        </div>
+        <div class="card" data-k="count" data-v="two_three" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <div class="card-title">2~3편</div>
+        </div>
+        <div class="card" data-k="count" data-v="four_plus" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <div class="card-title">4편 이상</div>
+        </div>
+      </div>
+      <div class="sec">러닝타임</div>
+      <div class="cards grid3">
+        <div class="card" data-k="length" data-v="under30" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <div class="card-title">30초 이하</div>
+        </div>
+        <div class="card" data-k="length" data-v="one_two" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <div class="card-title">1~2분</div>
+        </div>
+        <div class="card" data-k="length" data-v="over3" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <div class="card-title">3분 이상</div>
+        </div>
+      </div>
+      <div class="nav">
+        <button class="btn-back" onclick="bGo(1)">← 이전</button>
+        <button class="btn-next" onclick="bGo(3)">다음 →</button>
+      </div>
+    </div>
+
+    <!-- B Step 3: 촬영 규모 -->
+    <div class="bstep" id="bs3">
+      <div class="bstep-tag">브랜드필름 CF 상담 · 3/3</div>
+      <div class="step-title">촬영 규모는<br>어느 정도인가요?</div>
+      <div class="step-sub">가장 가까운 방향을 선택해 주세요.</div>
+      <div class="cards">
+        <div class="card" data-k="scale" data-v="small" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <span class="card-icon">🎥</span>
+          <div class="card-title">소규모</div>
+          <div class="card-desc">감독·촬영 1~2인, 미니멀하게 진행</div>
+        </div>
+        <div class="card" data-k="scale" data-v="mid" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <span class="card-icon">🎬</span>
+          <div class="card-title">중규모</div>
+          <div class="card-desc">조명·분장 포함 팀 단위 촬영</div>
+        </div>
+        <div class="card" data-k="scale" data-v="large" onclick="bPick(this)">
+          <div class="tick">✓</div>
+          <span class="card-icon">🏟️</span>
+          <div class="card-title">대형 프로덕션</div>
+          <div class="card-desc">풀 크루, 세트 세팅, 대규모 현장</div>
+        </div>
+      </div>
+      <div class="nav">
+        <button class="btn-back" onclick="bGo(2)">← 이전</button>
+        <button class="btn-next" id="bn3" disabled onclick="showBrandResult()">견적 범위 보기 →</button>
+      </div>
+    </div>
+
+    <!-- B Result: 견적 범위 + 폼 -->
+    <div class="bstep" id="bsResult">
+      <button class="btn-back-intro" onclick="bGo(3)">← 다시 선택하기</button>
+      <div class="brand-hero" id="bHero">
+        <div class="brand-eyebrow">✦ 브랜드필름 CF · 예상 범위</div>
+        <div class="brand-title" id="bRangeLabel">—</div>
+        <div class="brand-sub" id="bRangeDesc"></div>
+      </div>
+      <div class="res-note" style="margin-bottom:12px;">
+        <strong>실제 견적은 미팅 후 확정돼요.</strong> 아래 연락처를 남겨주시면 스튜디오답에서 맞춤 제안을 드릴게요.
+      </div>
+      <div class="brand-form-card">
+        <div class="brand-form-header">
+          <div class="brand-form-title">브랜드필름 맞춤 상담 신청</div>
+          <div class="brand-form-sub">연락처와 프로젝트 내용을 남겨주세요</div>
+        </div>
+        <form class="brand-form-body" id="brandForm" onsubmit="submitBrand(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>이름</label>
+              <input type="text" id="bName" placeholder="홍길동" required />
+            </div>
+            <div class="form-group">
+              <label>연락처</label>
+              <input type="tel" id="bPhone" placeholder="010-0000-0000" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>소속 <span class="opt">선택</span></label>
+            <input type="text" id="bOrg" placeholder="회사명 / 브랜드명 / 개인" />
+          </div>
+          <div class="form-group">
+            <label>납품 희망일 <span class="opt">선택</span></label>
+            <input type="text" id="bDeadline" placeholder="예: 8월 말, 9월 15일, 미정" />
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>프로젝트 내용 <span class="opt">선택</span></label>
+            <textarea id="bContent" placeholder="어떤 영상인지, 레퍼런스 URL 등 자유롭게 적어주세요"></textarea>
+          </div>
+          <button type="submit" class="btn-submit" id="brandSubmitBtn">상담 신청하기 →</button>
+        </form>
+      </div>
+      <div class="success-box" id="brandSuccess" style="display:none;">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">상담 신청이 접수됐어요!</div>
+        <div class="success-sub">스튜디오답에서 빠르게 확인 후<br>입력하신 연락처로 연락드릴게요.</div>
+      </div>
+      <button class="btn-restart" onclick="goBackIntro()" style="margin-top:12px;">← 처음으로 돌아가기</button>
+    </div>
+
+  </div>
+
+  <div class="progress" id="progress" style="display:none;"></div>
+
+  <!-- ── STEP 1 : 서비스 유형 ── -->
+  <div class="step" id="s1">
+    <div class="step-tag">Step 1 of 4</div>
+    <div class="step-title">어떤 서비스가<br>필요하신가요?</div>
+    <div class="step-sub">가장 가까운 항목을 선택해 주세요.</div>
+
+    <div class="cards">
+      <div class="card card-featured" data-k="serviceType" data-v="full" onclick="pick(this)">
+        <div class="tick">✓</div>
+        <div class="rec-badge">⭐ 가장 추천해요!</div>
+        <span class="card-icon">💡</span>
+        <div class="card-title">기획 + 촬영 + 편집</div>
+        <div class="card-desc">(콘셉트/스토리보드 등) 기획부터 촬영·편집까지 전 과정을 함께하는 경우</div>
+      </div>
+      <div class="card" data-k="serviceType" data-v="shoot_edit" onclick="pick(this)">
+        <div class="tick">✓</div>
+        <span class="card-icon">🎥</span>
+        <div class="card-title">촬영 + 편집</div>
+        <div class="card-desc">기획은 완벽히 준비되어 있고, 촬영부터 최종 편집까지 의뢰하는 경우</div>
+      </div>
+      <div class="card" data-k="serviceType" data-v="shoot_only" onclick="pick(this)">
+        <div class="tick">✓</div>
+        <span class="card-icon">🎬</span>
+        <div class="card-title">촬영만</div>
+        <div class="card-desc">기획·편집은 직접 하시고, 현장 촬영과 기본 컷 정리만 필요한 경우</div>
+      </div>
+      <div class="card" data-k="serviceType" data-v="edit_only" onclick="pick(this)">
+        <div class="tick">✓</div>
+        <span class="card-icon">✂️</span>
+        <div class="card-title">편집만</div>
+        <div class="card-desc">이미 촬영된 소스 영상이 있고, 편집 작업만 필요한 경우</div>
+      </div>
+      <div class="card" data-k="serviceType" data-v="motion" onclick="pick(this)">
+        <div class="tick">✓</div>
+        <span class="card-icon">✨</span>
+        <div class="card-title">모션그래픽</div>
+        <div class="card-desc">실사 촬영 없이 그래픽·애니메이션·타이틀 등 모션 작업만 필요한 경우</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-next" id="n1" disabled onclick="go(2)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2 : 영상 유형 / 편집 복잡도 / 모션 유형 ── -->
+  <div class="step" id="s2">
+    <div class="step-tag">Step 2 of 4</div>
+    <div class="step-title" id="s2t">어떤 영상인가요?</div>
+    <div class="step-sub" id="s2s">영상의 성격과 가장 가까운 유형을 선택해 주세요.</div>
+    <div class="cards" id="s2cards"></div>
+    <div class="nav">
+      <button class="btn-back" onclick="go(1)">← 이전</button>
+      <button class="btn-next" id="n2" disabled onclick="go(3)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3 : 세부 조건 ── -->
+  <div class="step" id="s3">
+    <div class="step-tag">Step 3 of 4</div>
+    <div class="step-title" id="s3t">조건을 알려주세요</div>
+    <div class="step-sub">더 정확한 견적을 위해 세부 조건을 선택해 주세요.</div>
+    <div id="s3content"></div>
+    <div class="nav">
+      <button class="btn-back" onclick="go(2)">← 이전</button>
+      <button class="btn-next" id="n3" onclick="go(4)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4 : 추가 옵션 ── -->
+  <div class="step" id="s4">
+    <div class="step-tag">Step 4 of 4</div>
+    <div class="step-title">추가 옵션</div>
+    <div class="step-sub">해당하는 옵션을 선택해 주세요. (선택 사항)</div>
+    <div class="toggles" id="s4content"></div>
+    <div class="nav">
+      <button class="btn-back" onclick="go(3)">← 이전</button>
+      <button class="btn-next" onclick="showResult()">견적 보기 →</button>
+    </div>
+  </div>
+
+  <!-- ── RESULT ── -->
+  <div class="step" id="stepResult">
+    <div class="res-hero">
+      <div class="res-badge">예상 견적</div>
+      <div class="res-price" id="rPrice">—</div>
+      <div class="res-unit">만원 (VAT 별도)</div>
+    </div>
+    <div class="res-summary" id="rSummary"></div>
+    <div class="res-breakdown" id="rBreakdown"></div>
+    <!-- CTA 카드 -->
+    <div class="cta-card" id="ctaCard">
+      <div class="cta-header">
+        <div class="cta-title">위 견적을 토대로 의뢰하기</div>
+        <div class="cta-sub">연락처를 남겨주시면 빠르게 확인 후 연락드려요</div>
+      </div>
+      <form class="contact-form" id="contactForm" onsubmit="submitQuote(event)">
+        <div class="form-group">
+          <label>이름</label>
+          <input type="text" id="fName" placeholder="홍길동" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>연락처</label>
+            <input type="tel" id="fPhone" placeholder="010-0000-0000" required />
+          </div>
+          <div class="form-group">
+            <label>소속 <span class="opt">선택</span></label>
+            <input type="text" id="fOrg" placeholder="회사명 / 개인" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>납품 희망일 <span class="opt">선택</span></label>
+          <input type="text" id="fDeadline" placeholder="예: 7월 말, 8월 15일, 미정" />
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn">견적 문의 보내기</button>
+      </form>
+    </div>
+
+    <!-- 전송 완료 -->
+    <div class="success-box" id="successMsg" style="display:none;">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">견적 문의가 접수됐어요!</div>
+      <div class="success-sub">스튜디오답에서 빠르게 확인 후<br>입력하신 연락처로 연락드릴게요.</div>
+    </div>
+
+    <button class="btn-restart" onclick="restart()" style="margin-top:12px;">처음부터 다시 계산하기</button>
+  </div>
+</main>
+
+<!-- ── 하단 고정 버튼 ── -->
+<div class="contact-footer">
+  <a class="btn-contact" href="mailto:06@studiodap.kr?subject=견적 문의드립니다">
+    <span class="ico">💬</span>
+    잘 모르겠어요 — 스튜디오답에 직접 연락하기
+  </a>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+const S = {
+  serviceType:    null,
+  videoType:      null,
+  editComplexity: null,
+  editLength:     null,
+  motionType:     null,
+  motionLength:   null,
+  shootDays:      null,
+  location:       null,
+  planLevel:      null,
+  options: { drone: false, subtitle: false, multiVer: false, rush: false }
+};
+
+let cur = 1;
+const TOTAL = 4;
+
+// ─────────────────────────────────────────────
+//  Intro → Step 1
+// ─────────────────────────────────────────────
+function startCalc() {
+  document.getElementById('intro').classList.remove('active');
+  document.getElementById('progress').style.display = '';
+  cur = 1;
+  document.getElementById('s1').classList.add('active');
+  drawProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────────
+//  Progress
+// ─────────────────────────────────────────────
+function drawProgress() {
+  const el = document.getElementById('progress');
+  el.innerHTML = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'progress-dot' + (i <= cur ? ' on' : '');
+    el.appendChild(d);
+  }
+}
+drawProgress();
+
+// ─────────────────────────────────────────────
+//  Card selection
+// ─────────────────────────────────────────────
+function pick(el) {
+  const key = el.dataset.k;
+  const val = el.dataset.v;
+  // Deselect siblings with same key
+  document.querySelectorAll(`[data-k="${key}"]`).forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  S[key] = val;
+
+  // Enable next button for current step
+  const nb = document.getElementById('n' + cur);
+  if (nb) nb.disabled = false;
+}
+
+// ─────────────────────────────────────────────
+//  Toggle
+// ─────────────────────────────────────────────
+function tog(el, key) {
+  el.classList.toggle('on');
+  S.options[key] = el.classList.contains('on');
+}
+
+// ─────────────────────────────────────────────
+//  Navigation
+// ─────────────────────────────────────────────
+function go(step) {
+  document.getElementById('s' + cur)?.classList.remove('active');
+  document.getElementById('stepResult')?.classList.remove('active');
+  cur = step;
+  if (step === 2) buildS2();
+  if (step === 3) buildS3();
+  if (step === 4) buildS4();
+  document.getElementById('s' + cur)?.classList.add('active');
+  drawProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────────
+//  Step 2 builder
+// ─────────────────────────────────────────────
+function buildS2() {
+  const t = document.getElementById('s2t');
+  const s = document.getElementById('s2s');
+  const c = document.getElementById('s2cards');
+  S.videoType = S.editComplexity = S.motionType = null;
+  document.getElementById('n2').disabled = true;
+
+  const svc = S.serviceType;
+
+  if (svc === 'edit_only') {
+    t.textContent = '어떤 영상을 편집해 드릴까요?';
+    s.textContent = '소스 영상의 콘텐츠 유형을 선택해 주세요.';
+    c.className = 'cards';
+    c.innerHTML = card('videoType','sketch','📸','스케치 / 행사 기록','행사, 이벤트, 팝업 현장 기록 영상')
+                + card('videoType','interview','🎤','인터뷰 / 다큐','인터뷰, 인물 다큐, 후기 영상 등')
+                + card('videoType','product','📦','제품 / 서비스 소개','제품 리뷰, 앱 소개, 서비스 설명 영상 등')
+                + card('videoType','shorts','📱','쇼츠 / 숏폼','유튜브 쇼츠, 릴스 등 세로형 단편 콘텐츠');
+  } else if (svc === 'motion') {
+    t.textContent = '모션 작업 유형을 선택해주세요';
+    s.textContent = '필요한 모션의 성격을 선택해 주세요.';
+    c.className = 'cards';
+    c.innerHTML = card('motionType','title','🔤','타이틀 / 자막 모션','오프닝 타이틀, 자막 애니메이션, 로고 인트로 등')
+                + card('motionType','standard_motion','🎬','영상 편집 + 모션','영상 소스에 모션그래픽을 더한 편집본')
+                + card('motionType','full_motion','✨','풀 모션그래픽','실사 없이 그래픽·애니메이션으로만 구성된 영상');
+  } else {
+    // 촬영 포함 서비스
+    t.textContent = '어떤 영상인가요?';
+    s.textContent = '영상의 성격과 가장 가까운 유형을 선택해 주세요.';
+    c.className = 'cards';
+    c.innerHTML = card('videoType','sketch','📸','스케치 / 행사 기록','행사, 이벤트, 팝업 현장 기록 영상')
+                + card('videoType','interview','🎤','인터뷰 / 다큐','인터뷰, 인물 다큐, 후기 영상 등')
+                + card('videoType','product','📦','제품 / 서비스 소개','제품 리뷰, 앱 소개, 서비스 설명 영상 등')
+                + card('videoType','shorts','📱','쇼츠 / 숏폼','유튜브 쇼츠, 릴스 등 세로형 단편 콘텐츠');
+  }
+}
+
+function card(k, v, icon, title, desc) {
+  return `<div class="card" data-k="${k}" data-v="${v}" onclick="pick(this)">
+    <div class="tick">✓</div>
+    <span class="card-icon">${icon}</span>
+    <div class="card-title">${title}</div>
+    <div class="card-desc">${desc}</div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+//  Step 3 builder
+// ─────────────────────────────────────────────
+function buildS3() {
+  const t   = document.getElementById('s3t');
+  const con = document.getElementById('s3content');
+  const svc = S.serviceType;
+  S.shootDays = S.location = S.editLength = S.motionLength = S.planLevel = null;
+  document.getElementById('n3').disabled = false; // step3는 항상 통과 가능
+
+  let html = '';
+
+  if (svc === 'edit_only') {
+    t.textContent = '편집 조건을 알려주세요';
+    html = secLabel('편집 수준')
+      + `<div class="cards">
+          ${smCard('editComplexity','cut','컷편집 + 자막','기본 컷 정리, 자막, 간단한 색보정')}
+          ${smCard('editComplexity','standard','표준 편집','색보정 + 음악 + 기본 모션')}
+          ${smCard('editComplexity','advanced','고급 편집','풀 모션그래픽, 복잡한 편집')}
+        </div>`
+      + secLabel('완성 영상 러닝타임')
+      + grid2(
+          smCard('editLength','under1','1분 이하',''),
+          smCard('editLength','1to3','1 ~ 3분',''),
+          smCard('editLength','3to5','3 ~ 5분',''),
+          smCard('editLength','over5','5분 이상','')
+        );
+  } else if (svc === 'motion') {
+    t.textContent = '모션 분량을 알려주세요';
+    html = secLabel('완성 영상 길이')
+      + grid2(
+          smCard('motionLength','under30','30초 이하',''),
+          smCard('motionLength','30to2','30초 ~ 2분',''),
+          smCard('motionLength','2to5','2 ~ 5분','')
+        );
+  } else {
+    // 촬영 포함
+    t.textContent = '촬영 조건을 알려주세요';
+    html = secLabel('촬영 일수')
+      + `<div class="cards grid3">
+          ${smCard('shootDays','1','1일','')}
+          ${smCard('shootDays','2','2일','')}
+          ${smCard('shootDays','3','3일','')}
+        </div>`
+      + secLabel('촬영 장소')
+      + `<div class="cards">
+          ${smCard('location','metro','수도권','서울, 경기, 인천')}
+          ${smCard('location','local_day','지방 (당일)','당일 왕복 가능한 지방')}
+          ${smCard('location','local_stay','지방 (숙박)','숙박이 필요한 원거리')}
+        </div>`;
+
+    if (svc === 'shoot_edit' || svc === 'full') {
+      html += secLabel('편집 수준')
+        + `<div class="cards">
+            ${smCard('editComplexity','cut','컷편집 + 자막','기본 컷 정리, 자막, 간단한 색보정')}
+            ${smCard('editComplexity','standard','표준 편집','색보정 + 음악 + 기본 모션')}
+            ${smCard('editComplexity','advanced','고급 편집','풀 모션그래픽, 복잡한 편집')}
+          </div>`;
+    }
+
+    // 기획비는 70만원 고정 — 선택 항목 없음
+  }
+
+  con.innerHTML = html;
+}
+
+function secLabel(txt) {
+  return `<div class="sec">${txt}</div>`;
+}
+function smCard(k, v, title, desc) {
+  return `<div class="card" data-k="${k}" data-v="${v}" onclick="pick(this)">
+    <div class="tick">✓</div>
+    <div class="card-title">${title}</div>
+    ${desc ? `<div class="card-desc">${desc}</div>` : ''}
+  </div>`;
+}
+function grid2(...items) {
+  return `<div class="cards grid2">${items.join('')}</div>`;
+}
+
+// ─────────────────────────────────────────────
+//  Step 4 builder
+// ─────────────────────────────────────────────
+function buildS4() {
+  const svc  = S.serviceType;
+  const opts = [];
+
+  if (['shoot_only','shoot_edit','full'].includes(svc))
+    opts.push({ k:'drone',    label:'드론 촬영',    desc:'항공 드론 샷 포함',           price:'+50만원' });
+
+  if (['shoot_edit','full','edit_only'].includes(svc)) {
+    opts.push({ k:'subtitle', label:'영문 자막',    desc:'영문 자막 추가 제작',          price:'+20만원' });
+    opts.push({ k:'multiVer', label:'하이라이트 숏폼 추가', desc:'촬영본 기반 세로형 숏폼 1편 추가 제작', price:'+20만원' });
+  }
+
+  opts.push({ k:'rush', label:'급행 납품', desc:'협의 일정보다 빠른 납품 (1주 이내)', price:'+20%' });
+
+  document.getElementById('s4content').innerHTML = opts.map(o => `
+    <div class="tog" onclick="tog(this,'${o.k}')">
+      <div class="tog-info">
+        <div class="tog-label">${o.label}</div>
+        <div class="tog-desc">${o.desc}</div>
+      </div>
+      <div class="tog-right">
+        <div class="tog-price">${o.price}</div>
+        <div class="sw"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+//  Price calculation
+// ─────────────────────────────────────────────
+const SHOOT_BASE = { metro: 120, local_day: 160, local_stay: 240 };
+const ADD_DAY    = 80;
+const DAYS_MAP   = { '1':1, '2':2, '3':3 };
+
+const EDIT = {
+  cut:      { under1:50,  '1to3':100, '3to5':150, over5:200 },
+  standard: { under1:80,  '1to3':150, '3to5':220, over5:300 },
+  advanced: { under1:130, '1to3':250, '3to5':380, over5:500 }
+};
+
+const MOTION = {
+  title:           { under30:70,  '30to2':120, '2to5':180, over5:250 },
+  standard_motion: { under30:100, '30to2':180, '2to5':280, over5:400 },
+  full_motion:     { under30:180, '30to2':350, '2to5':550, over5:800 }
+};
+
+// 기획비: 영상 유형별 차등
+const PLAN = {
+  shorts:    30,
+  sketch:    40,
+  interview: 60,
+  product:   70,
+  campaign:  100
+};
+
+// 촬영 유형별 편집 기본 길이 가정 (컷편집 기준)
+const VIDEO_TYPE_LEN = {
+  sketch:    '1to3',
+  interview: '1to3',
+  campaign:  '1to3',
+  product:   'under1',
+  shorts:    'under1'
+};
+
+function calcPrice() {
+  const svc = S.serviceType;
+  let min = 0, max = 0;
+  const rows = [];
+
+  if (svc === 'shoot_only') {
+    const days = DAYS_MAP[S.shootDays] || 1;
+    const loc  = S.location || 'metro';
+    const base = SHOOT_BASE[loc] + (days - 1) * ADD_DAY;
+    min = Math.round(base * 0.9);
+    max = Math.round(base * 1.1);
+    rows.push({ l: `촬영 ${days}일 (${locLabel(loc)})`, v: `${min}~${max}만원` });
+
+  } else if (svc === 'edit_only') {
+    const comp = S.editComplexity || 'standard';
+    const len  = S.editLength || '1to3';
+    const base = EDIT[comp]?.[len] || 100;
+    min = Math.round(base * 0.9);
+    max = Math.round(base * 1.15);
+    rows.push({ l: `편집 (${editLabel(comp)}, ${lenLabel(len)})`, v: `${min}~${max}만원` });
+
+  } else if (svc === 'motion') {
+    const mt   = S.motionType || 'standard_motion';
+    const mlen = S.motionLength || '30to2';
+    const base = MOTION[mt]?.[mlen] || 150;
+    min = Math.round(base * 0.9);
+    max = Math.round(base * 1.2);
+    rows.push({ l: `모션그래픽 (${motionLabel(mt)})`, v: `${min}~${max}만원` });
+
+  } else if (svc === 'shoot_edit') {
+    const days    = DAYS_MAP[S.shootDays] || 1;
+    const loc     = S.location || 'metro';
+    const sCost   = SHOOT_BASE[loc] + (days - 1) * ADD_DAY;
+    const comp    = S.editComplexity || 'standard';
+    const defLen  = VIDEO_TYPE_LEN[S.videoType] || '1to3';
+    const eCost   = EDIT[comp]?.[defLen] || 100;
+    const total   = sCost + eCost;
+    min = Math.round(total * 0.9);
+    max = Math.round(total * 1.1);
+    rows.push({ l: `촬영 ${days}일 (${locLabel(loc)})`, v: `${sCost}만원` });
+    rows.push({ l: `편집 (${editLabel(comp)})`, v: `${eCost}만원` });
+
+  } else if (svc === 'full') {
+    const days    = DAYS_MAP[S.shootDays] || 1;
+    const loc     = S.location || 'metro';
+    const sCost   = SHOOT_BASE[loc] + (days - 1) * ADD_DAY;
+    const comp    = S.editComplexity || 'standard';
+    const defLen  = VIDEO_TYPE_LEN[S.videoType] || '1to3';
+    const eCost   = EDIT[comp]?.[defLen] || 100;
+    const pCost   = PLAN[S.videoType] ?? 60; // 기획비: 영상 유형별
+    const total   = sCost + eCost + pCost;
+    min = Math.round(total * 0.9);
+    max = Math.round(total * 1.1);
+    rows.push({ l: `기획`,       v: `${pCost}만원` });
+    rows.push({ l: `촬영 ${days}일 (${locLabel(loc)})`,      v: `${sCost}만원` });
+    rows.push({ l: `편집 (${editLabel(comp)})`,               v: `${eCost}만원` });
+  }
+
+  // Options
+  if (S.options.drone)    { min+=50; max+=50; rows.push({ l:'드론 촬영',      v:'+50만원' }); }
+  if (S.options.subtitle) { min+=20; max+=20; rows.push({ l:'영문 자막',      v:'+20만원' }); }
+  if (S.options.multiVer) { min+=20; max+=20; rows.push({ l:'하이라이트 숏폼 추가', v:'+20만원' }); }
+  if (S.options.rush) {
+    min = Math.round(min * 1.2);
+    max = Math.round(max * 1.2);
+    rows.push({ l:'급행 납품', v:'+20%' });
+  }
+
+  return { min, max, rows };
+}
+
+// ─────────────────────────────────────────────
+//  Labels
+// ─────────────────────────────────────────────
+function locLabel(v)    { return {metro:'수도권', local_day:'지방 당일', local_stay:'지방 숙박'}[v] || v; }
+function editLabel(v)   { return {cut:'컷편집', standard:'표준 편집', advanced:'고급 편집'}[v] || v; }
+function lenLabel(v)    { return {under1:'1분 이하', '1to3':'1~3분', '3to5':'3~5분', over5:'5분 이상'}[v] || v; }
+function motionLabel(v) { return {title:'타이틀/자막', standard_motion:'편집+모션', full_motion:'풀 모션'}[v] || v; }
+function planLabel(v)   { return {basic:'방향 제시', standard_plan:'기획+스토리보드', full_plan:'풀 기획'}[v] || v; }
+
+// ─────────────────────────────────────────────
+//  Show result
+// ─────────────────────────────────────────────
+// 10만원 단위 반올림
+function round10(n) { return Math.round(n / 10) * 10; }
+
+function buildSummary() {
+  const svc = S.serviceType;
+  const rows = [];
+
+  // 서비스 유형
+  const svcLabel = {
+    full:       '기획 + 촬영 + 편집',
+    shoot_edit: '촬영 + 편집',
+    shoot_only: '촬영만',
+    edit_only:  '편집만',
+    motion:     '모션그래픽'
+  }[svc] || '-';
+  rows.push({ k: '서비스', v: svcLabel });
+
+  // 영상 유형 (촬영 포함 + 편집만)
+  if (['shoot_only','shoot_edit','full','edit_only'].includes(svc) && S.videoType) {
+    const vtLabel = {
+      sketch:    '스케치 / 행사 기록',
+      interview: '인터뷰 / 다큐',
+      campaign:  '캠페인 / 브랜드 필름',
+      product:   '제품 / 서비스 소개',
+      shorts:    '쇼츠 / 숏폼'
+    }[S.videoType] || S.videoType;
+    rows.push({ k: '영상 유형', v: vtLabel });
+  }
+
+  // 편집 복잡도 (편집만 step3)
+  if (svc === 'edit_only' && S.editComplexity) {
+    rows.push({ k: '편집 수준', v: editLabel(S.editComplexity) });
+  }
+
+  // 모션 유형
+  if (svc === 'motion' && S.motionType) {
+    rows.push({ k: '모션 유형', v: motionLabel(S.motionType) });
+  }
+
+  // 촬영 일수 + 장소
+  if (['shoot_only','shoot_edit','full'].includes(svc)) {
+    const d = S.shootDays ? `${DAYS_MAP[S.shootDays]}일` : '-';
+    const l = S.location  ? locLabel(S.location) : '-';
+    rows.push({ k: '촬영', v: `${d} · ${l}` });
+  }
+
+  // 편집 수준 (촬영+편집, 풀패키지)
+  if (['shoot_edit','full'].includes(svc) && S.editComplexity) {
+    rows.push({ k: '편집 수준', v: editLabel(S.editComplexity) });
+  }
+
+  // 편집 길이 (편집만)
+  if (svc === 'edit_only' && S.editLength) {
+    rows.push({ k: '영상 길이', v: lenLabel(S.editLength) });
+  }
+
+  // 모션 길이
+  if (svc === 'motion' && S.motionLength) {
+    const mlLabel = {
+      under30: '30초 이하', '30to2': '30초~2분', '2to5': '2~5분', over5: '5분 이상'
+    }[S.motionLength] || S.motionLength;
+    rows.push({ k: '영상 길이', v: mlLabel });
+  }
+
+  // 추가 옵션
+  const optList = [];
+  if (S.options.drone)    optList.push('드론 촬영');
+  if (S.options.subtitle) optList.push('영문 자막');
+  if (S.options.multiVer) optList.push('하이라이트 숏폼 추가');
+  if (S.options.rush)     optList.push('급행 납품');
+  if (optList.length > 0) rows.push({ k: '추가 옵션', v: optList.join(' · ') });
+  else                     rows.push({ k: '추가 옵션', v: '없음' });
+
+  let html = `<div class="sum-head">선택하신 항목</div>`;
+  rows.forEach(r => {
+    html += `<div class="sum-row"><span class="sum-key">${r.k}</span><span class="sum-val">${r.v}</span></div>`;
+  });
+  return html;
+}
+
+function showResult() {
+  document.getElementById('s4').classList.remove('active');
+  let { min, max, rows } = calcPrice();
+
+  // 10만원 단위 반올림
+  min = round10(min);
+  max = round10(max);
+
+  document.getElementById('rPrice').textContent = `${min}~${max}`;
+  document.getElementById('rSummary').innerHTML = buildSummary();
+
+  let bdHtml = `<div class="bd-head">견적 구성</div>`;
+  rows.forEach(r => {
+    bdHtml += `<div class="bd-row"><span class="lbl">${r.l}</span><span class="val">${r.v}</span></div>`;
+  });
+  bdHtml += `<div class="bd-total"><span>예상 합계</span><span class="tot-val">${min}~${max}만원</span></div>`;
+  document.getElementById('rBreakdown').innerHTML = bdHtml;
+
+  document.getElementById('stepResult').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────────
+//  Quote form submission (Formspree)
+// ─────────────────────────────────────────────
+// ※ Formspree 설정 방법:
+//   1. https://formspree.io 에서 무료 가입
+//   2. New Form 생성 → 이메일 인증
+//   3. 아래 FORMSPREE_ID 를 발급받은 ID로 교체 (예: "xabcde12")
+const FORMSPREE_ID = 'mbdbdbwp';
+
+function buildSummaryText() {
+  const svcLabel = {
+    full:'기획+촬영+편집', shoot_edit:'촬영+편집',
+    shoot_only:'촬영만', edit_only:'편집만', motion:'모션그래픽'
+  }[S.serviceType] || '-';
+
+  const vtLabel = {
+    sketch:'스케치/행사기록', interview:'인터뷰/다큐',
+    campaign:'캠페인/브랜드필름', product:'제품/서비스소개', shorts:'쇼츠/숏폼'
+  }[S.videoType] || '';
+
+  const lines = [`서비스: ${svcLabel}`];
+  if (vtLabel)          lines.push(`영상 유형: ${vtLabel}`);
+  if (S.location)       lines.push(`촬영 장소: ${locLabel(S.location)}`);
+  if (S.shootDays)      lines.push(`촬영 일수: ${S.shootDays}일`);
+  if (S.editComplexity) lines.push(`편집 수준: ${editLabel(S.editComplexity)}`);
+  if (S.editLength)     lines.push(`영상 길이: ${lenLabel(S.editLength)}`);
+  if (S.motionType)     lines.push(`모션 유형: ${motionLabel(S.motionType)}`);
+  if (S.motionLength) {
+    const ml = {under30:'30초 이하','30to2':'30초~2분','2to5':'2~5분'}[S.motionLength] || S.motionLength;
+    lines.push(`모션 길이: ${ml}`);
+  }
+
+  const opts = [];
+  if (S.options.drone)    opts.push('드론 촬영');
+  if (S.options.subtitle) opts.push('영문 자막');
+  if (S.options.multiVer) opts.push('하이라이트 숏폼 추가');
+  if (S.options.rush)     opts.push('급행 납품');
+  if (opts.length) lines.push(`추가 옵션: ${opts.join(', ')}`);
+
+  return lines.join('\n');
+}
+
+async function submitQuote(e) {
+  e.preventDefault();
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '전송 중…';
+
+  // 현재 견적 금액 가져오기
+  const priceText = document.getElementById('rPrice').textContent;
+
+  const fd = new FormData();
+  fd.append('이름',       document.getElementById('fName').value.trim());
+  fd.append('연락처',     document.getElementById('fPhone').value.trim());
+  fd.append('소속',       document.getElementById('fOrg').value.trim() || '미입력');
+  fd.append('납품희망일', document.getElementById('fDeadline').value.trim() || '미입력');
+  fd.append('예상견적',   `${priceText}만원 (VAT 별도)`);
+  fd.append('견적내용',   buildSummaryText());
+
+  try {
+    const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+      method: 'POST',
+      body: fd,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (res.ok) {
+      document.getElementById('ctaCard').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+    } else {
+      throw new Error('server error');
+    }
+  } catch {
+    btn.disabled = false;
+    btn.textContent = '견적 제출하기 →';
+    alert('전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Brand mini-wizard
+// ─────────────────────────────────────────────
+let bCur = 1;
+const BS = { cast: null, count: null, length: null, scale: null };
+
+function startBrand() {
+  document.getElementById('intro').classList.remove('active');
+  document.getElementById('brandScreen').classList.add('active');
+  bCur = 1;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function bGo(step) {
+  const curId  = bCur  <= 3 ? 'bs' + bCur  : 'bsResult';
+  const nextId = step  <= 3 ? 'bs' + step   : 'bsResult';
+  document.getElementById(curId)?.classList.remove('active');
+  bCur = step;
+  document.getElementById(nextId)?.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function bPick(el) {
+  const key = el.dataset.k;
+  const val = el.dataset.v;
+  document.querySelectorAll(`#brandScreen [data-k="${key}"]`).forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  BS[key] = val;
+  const btnMap = { cast: 'bn1', scale: 'bn3' };
+  const nb = document.getElementById(btnMap[key]);
+  if (nb) nb.disabled = false;
+}
+
+function calcBrandRange() {
+  if (BS.cast === 'celebrity') {
+    return { label: '1,500만원 이상', desc: '유명인·셀럽 섭외가 포함된 경우 규모에 따라 크게 달라져요.' };
+  }
+  const castScore  = { none:1, internal:2, external:3 }[BS.cast]   || 1;
+  const scaleScore = { small:1, mid:2,     large:3    }[BS.scale]  || 1;
+  const countScore = { one:1,  two_three:2, four_plus:3 }[BS.count] || 1;
+  const lenScore   = { under30:0, one_two:1, over3:2   }[BS.length] || 0;
+  const total = castScore + scaleScore + countScore + lenScore;
+
+  if (total <= 5) return { label: '300~700만원대',    desc: '소규모 브랜드필름 기준 예상 범위예요.' };
+  if (total <= 8) return { label: '700~1,500만원대',  desc: '중규모 프로덕션 기준 예상 범위예요.' };
+  return              { label: '1,500만원 이상',    desc: '대규모 프로덕션이 예상돼요. 상담을 통해 정확한 제안을 드릴게요.' };
+}
+
+function showBrandResult() {
+  const { label, desc } = calcBrandRange();
+  document.getElementById('bRangeLabel').textContent = label;
+  document.getElementById('bRangeDesc').textContent  = desc;
+  bGo(4);
+}
+
+function goBackIntro() {
+  document.getElementById('brandScreen').classList.remove('active');
+  document.querySelectorAll('.bstep').forEach(s => s.classList.remove('active'));
+  document.getElementById('bs1').classList.add('active');
+  Object.assign(BS, { cast:null, count:null, length:null, scale:null });
+  document.querySelectorAll('#brandScreen .card').forEach(c => c.classList.remove('sel'));
+  document.getElementById('bn1').disabled = true;
+  document.getElementById('bn3').disabled = true;
+  const form = document.getElementById('brandForm');
+  if (form) { form.reset(); form.style.display = ''; }
+  const bs = document.getElementById('brandSubmitBtn');
+  if (bs) { bs.disabled = false; bs.textContent = '상담 신청하기 →'; }
+  document.getElementById('brandSuccess').style.display = 'none';
+  bCur = 1;
+  document.getElementById('intro').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function submitBrand(e) {
+  e.preventDefault();
+  const btn = document.getElementById('brandSubmitBtn');
+  btn.disabled = true; btn.textContent = '전송 중…';
+
+  const { label: rangeLabel } = calcBrandRange();
+  const castLabel  = { none:'인물 없음', internal:'내부 인원', external:'외부 모델 섭외', celebrity:'유명인·셀럽 섭외' }[BS.cast]   || '미입력';
+  const scaleLabel = { small:'소규모 (1~2인)', mid:'중규모 (팀 단위)', large:'대형 프로덕션' }[BS.scale]                             || '미입력';
+  const countLabel = { one:'1편', two_three:'2~3편', four_plus:'4편 이상' }[BS.count]                                                || '미입력';
+  const lenLabel   = { under30:'30초 이하', one_two:'1~2분', over3:'3분 이상' }[BS.length]                                           || '미입력';
+
+  const fd = new FormData();
+  fd.append('유형',         '브랜드필름/웹CF 상담');
+  fd.append('예상범위',     rangeLabel);
+  fd.append('출연진',       castLabel);
+  fd.append('촬영규모',     scaleLabel);
+  fd.append('편수',         countLabel);
+  fd.append('러닝타임',     lenLabel);
+  fd.append('이름',         document.getElementById('bName').value.trim());
+  fd.append('연락처',       document.getElementById('bPhone').value.trim());
+  fd.append('소속',         document.getElementById('bOrg').value.trim() || '미입력');
+  fd.append('납품희망일',   document.getElementById('bDeadline').value.trim() || '미입력');
+  fd.append('프로젝트내용', document.getElementById('bContent').value.trim() || '미입력');
+
+  try {
+    const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+      method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      document.getElementById('brandForm').style.display = 'none';
+      document.getElementById('brandSuccess').style.display = 'block';
+    } else { throw new Error('server error'); }
+  } catch {
+    btn.disabled = false;
+    btn.textContent = '상담 신청하기 →';
+    alert('전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Restart
+// ─────────────────────────────────────────────
+function restart() {
+  Object.assign(S, {
+    serviceType:null, videoType:null, editComplexity:null, editLength:null,
+    motionType:null, motionLength:null, shootDays:null, location:null, planLevel:null,
+    options:{ drone:false, subtitle:false, multiVer:false, rush:false }
+  });
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('sel'));
+  document.getElementById('n1').disabled = true;
+  document.getElementById('stepResult').classList.remove('active');
+  // 폼 초기화
+  const form = document.getElementById('contactForm');
+  form.reset();
+  form.style.display = '';
+  document.getElementById('ctaCard').style.display = '';
+  const sb = document.getElementById('submitBtn');
+  sb.disabled = false; sb.textContent = '견적 문의 보내기';
+  document.getElementById('successMsg').style.display = 'none';
+  // 인트로로 복귀
+  document.getElementById('progress').style.display = 'none';
+  document.getElementById('brandScreen').classList.remove('active');
+  document.getElementById('intro').classList.add('active');
+  cur = 1;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
