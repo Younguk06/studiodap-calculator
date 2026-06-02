@@ -461,34 +461,66 @@
       position: fixed;
       bottom: 0; left: 0; right: 0;
       z-index: 20;
-      background: linear-gradient(to top, rgba(242,244,246,1) 70%, rgba(242,244,246,0));
-      padding: 16px 20px 20px;
+      background: linear-gradient(to top, rgba(242,244,246,1) 65%, rgba(242,244,246,0));
+      padding: 20px 20px 24px;
       display: flex;
       justify-content: center;
     }
     .btn-contact {
       display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 11px 22px;
+      align-items: stretch;
+      gap: 0;
+      padding: 0;
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-radius: 99px;
-      color: var(--muted);
-      font-size: 13px; font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       font-family: inherit;
-      box-shadow: 0 2px 16px rgba(0,0,0,.10);
-      transition: all .18s;
+      box-shadow: 0 4px 20px rgba(0,0,0,.11);
+      transition: all .2s;
       white-space: nowrap;
+      overflow: hidden;
     }
     .btn-contact:hover {
       border-color: var(--accent);
-      color: var(--accent);
-      box-shadow: 0 4px 20px rgba(49,130,246,.18);
+      box-shadow: 0 6px 24px rgba(49,130,246,.18);
+      transform: translateY(-1px);
     }
-    .btn-contact .ico { font-size: 14px; }
+    .btn-contact-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .btn-contact-divider {
+      width: 1px;
+      background: var(--border);
+      margin: 10px 0;
+      flex-shrink: 0;
+    }
+    .btn-contact-texts {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 2px;
+      padding: 12px 20px 12px 14px;
+    }
+    .btn-contact-main {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .btn-contact-sub {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1;
+    }
 
     /* ── Contact Modal ── */
     .contact-modal-overlay {
@@ -757,7 +789,7 @@
 
 <header>
   <div class="logo" onclick="restart()">스튜디오답 <span class="logo-sub">견적 계산기</span></div>
-  <a class="header-link" href="https://www.studiodap.kr" target="_blank">www.studiodap.kr</a>
+  <a class="header-link" href="https://www.studiodap.kr/portfolio" target="_blank">스튜디오답 포트폴리오</a>
 </header>
 
 <main>
@@ -1090,8 +1122,12 @@
 <!-- ── 하단 고정 버튼 ── -->
 <div class="contact-footer">
   <button class="btn-contact" onclick="showContactModal()">
-    <span class="ico">💬</span>
-    잘 모르겠어요 — 스튜디오답 연락하기
+    <div class="btn-contact-icon">🙋</div>
+    <div class="btn-contact-divider"></div>
+    <div class="btn-contact-texts">
+      <span class="btn-contact-main">잘 모르겠어요!</span>
+      <span class="btn-contact-sub">PD에게 직접 연락하기</span>
+    </div>
   </button>
 </div>
 
