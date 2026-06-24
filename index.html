@@ -1386,11 +1386,11 @@ function buildS4() {
     opts.push({ k:'drone',    label:'드론 촬영',    desc:'항공 드론 샷 포함',           price:'+30만원' });
 
   if (['shoot_edit','full','edit_only'].includes(svc)) {
-    opts.push({ k:'subtitle', label:'영문 자막',    desc:'영문 자막 추가 제작',          price:'+20만원' });
-    opts.push({ k:'multiVer', label:'하이라이트 숏폼 추가', desc:'촬영본 기반 세로형 숏폼 1편 추가 제작', price:'+20만원' });
+    opts.push({ k:'subtitle', label:'영문 자막',    desc:'영문 자막 추가 제작',          price:'+35만원' });
+    opts.push({ k:'multiVer', label:'하이라이트 숏폼 추가', desc:'촬영본 기반 세로형 숏폼 1편 추가 제작', price:'+35만원' });
   }
 
-  opts.push({ k:'rush', label:'급행 납품', desc:'협의 일정보다 빠른 납품 (1주 이내)', price:'+20%' });
+  opts.push({ k:'rush', label:'급행 납품', desc:'협의 일정보다 빠른 납품 (1주 이내)', price:'+25%' });
 
   document.getElementById('s4content').innerHTML = opts.map(o => `
     <div class="tog" onclick="tog(this,'${o.k}')">
@@ -1409,14 +1409,14 @@ function buildS4() {
 // ─────────────────────────────────────────────
 //  Price calculation
 // ─────────────────────────────────────────────
-const SHOOT_BASE = { metro: 120, local_day: 160, local_stay: 240 };
-const ADD_DAY    = 80;
+const SHOOT_BASE = { metro: 120, local_day: 160, local_stay: 260 };
+const ADD_DAY    = 120;
 const DAYS_MAP   = { '1':1, '2':2, '3':3 };
 
 const EDIT = {
   cut:      { under1:50,  '1to3':100, '3to5':150, over5:200 },
   standard: { under1:80,  '1to3':150, '3to5':220, over5:300 },
-  advanced: { under1:130, '1to3':250, '3to5':380, over5:500 }
+  advanced: { under1:130, '1to3':250, '3to5':450, over5:600 }
 };
 
 const MOTION = {
@@ -1427,11 +1427,11 @@ const MOTION = {
 
 // 기획비: 영상 유형별 차등
 const PLAN = {
-  shorts:    30,
-  sketch:    40,
-  interview: 60,
+  shorts:    50,
+  sketch:    60,
+  interview: 80,
   product:   70,
-  campaign:  100
+  campaign:  150
 };
 
 // 촬영 유형별 편집 기본 길이 가정 (컷편집 기준)
@@ -1503,12 +1503,12 @@ function calcPrice() {
 
   // Options
   if (S.options.drone)    { min+=30; max+=30; rows.push({ l:'드론 촬영',      v:'+30만원' }); }
-  if (S.options.subtitle) { min+=20; max+=20; rows.push({ l:'영문 자막',      v:'+20만원' }); }
-  if (S.options.multiVer) { min+=20; max+=20; rows.push({ l:'하이라이트 숏폼 추가', v:'+20만원' }); }
+  if (S.options.subtitle) { min+=35; max+=35; rows.push({ l:'영문 자막',      v:'+35만원' }); }
+  if (S.options.multiVer) { min+=35; max+=35; rows.push({ l:'하이라이트 숏폼 추가', v:'+35만원' }); }
   if (S.options.rush) {
-    min = Math.round(min * 1.2);
-    max = Math.round(max * 1.2);
-    rows.push({ l:'급행 납품', v:'+20%' });
+    min = Math.round(min * 1.25);
+    max = Math.round(max * 1.25);
+    rows.push({ l:'급행 납품', v:'+25%' });
   }
 
   return { min, max, rows };
@@ -1763,18 +1763,23 @@ function bPick(el) {
 }
 
 function calcBrandRange() {
+  // 셀럽·대형 프로덕션은 조건 무관하게 최상위 구간으로 고정
   if (BS.cast === 'celebrity') {
     return { label: '1,500만원 이상', desc: '유명인·셀럽 섭외가 포함된 경우 규모에 따라 크게 달라져요.' };
   }
-  const castScore  = { none:1, internal:2, external:3 }[BS.cast]   || 1;
-  const scaleScore = { small:1, mid:2,     large:3    }[BS.scale]  || 1;
-  const countScore = { one:1,  two_three:2, four_plus:3 }[BS.count] || 1;
+  if (BS.scale === 'large') {
+    return { label: '1,500만원 이상', desc: '대형 프로덕션 규모예요. 상담을 통해 정확한 제안을 드릴게요.' };
+  }
+
+  const castScore  = { none:0, internal:1, external:3 }[BS.cast]   || 0;
+  const scaleScore = { small:0, mid:3 }[BS.scale]                  || 0;
+  const countScore = { one:0,  two_three:1, four_plus:2 }[BS.count] || 0;
   const lenScore   = { under30:0, one_two:1, over3:2   }[BS.length] || 0;
   const total = castScore + scaleScore + countScore + lenScore;
 
-  if (total <= 5) return { label: '300~700만원대',    desc: '소규모 브랜드필름 기준 예상 범위예요.' };
-  if (total <= 8) return { label: '700~1,500만원대',  desc: '중규모 프로덕션 기준 예상 범위예요.' };
-  return              { label: '1,500만원 이상',    desc: '대규모 프로덕션이 예상돼요. 상담을 통해 정확한 제안을 드릴게요.' };
+  if (total <= 2) return { label: '300~700만원대',   desc: '소규모 브랜드필름 기준 예상 범위예요.' };
+  if (total <= 5) return { label: '700~1,500만원대', desc: '중규모 프로덕션 기준 예상 범위예요.' };
+  return               { label: '1,500만원 이상',   desc: '규모와 조건에 따라 상담을 통해 정확한 제안을 드릴게요.' };
 }
 
 function showBrandResult() {
